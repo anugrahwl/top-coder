@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"os"
+	"time"
 
 	"encoding/json"
 
@@ -15,7 +16,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/asrofilfachrulr/translation-api/animation"
+	"github.com/anugrahwl/top-coder/animation"
 )
 
 const URL_API = "https://translate.google.com/translate_a/single?client=at&dt=t&dt=ld&dt=qca&dt=rm&dt=bd&dj=1&ie=UTF-8&oe=UTF-8&inputm=2&otf=2&iid=1dd3b944-fa62-4b55-b330-74909a99969e"
@@ -115,6 +116,8 @@ func main() {
 				promptAgain = false
 			} else if input == "n" || input == "N" {
 				animation.AnimateSentenceForward("Bye Bye")
+				time.Sleep(time.Millisecond * 500)
+				animation.AnimateSentenceBackward("Bye Bye")
 				done = true
 				promptAgain = false
 			} else {

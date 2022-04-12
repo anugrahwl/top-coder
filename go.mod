@@ -1,3 +1,3 @@
-module github.com/asrofilfachrulr/translation-api
+module github.com/anugrahwl/top-coder
 
 go 1.18
