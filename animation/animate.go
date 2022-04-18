@@ -13,7 +13,18 @@ func clearCMD() {
 	cmd.Run()
 }
 
-func AnimateSentenceForward(str string) {
+func AnimateSentenceForward(str string, inputController chan<- string) {
+	for i := 0; i < len(str)-1; i++ {
+		clearCMD()
+		fmt.Print(str[:i+1])
+		time.Sleep(time.Millisecond * 40)
+	}
+	clearCMD()
+	fmt.Print(str)
+	inputController <- "ok"
+}
+
+func AnimateSentenceForwardWithNoInput(str string) {
 	for i := 0; i < len(str)-1; i++ {
 		clearCMD()
 		fmt.Print(str[:i+1])

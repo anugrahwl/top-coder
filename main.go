@@ -75,39 +75,57 @@ func Translate(origin string, target string, str string) (string, error) {
 	return result.Sentences[0].Trans, nil
 }
 
-func GetInput() string {
+func GetInput(signalTerminate <-chan string, inputCh chan<- string) {
 	inputReader := bufio.NewReader(os.Stdin)
+	inputs := []string{}
 
-	str, _ := inputReader.ReadString('\n')
-	str = strings.Trim(str, "\n")
-
-	return str
+	for {
+		select {
+		case <-signalTerminate:
+			inputCh <- inputs[len(inputs)-1]
+		default:
+			str, _ := inputReader.ReadString('\n')
+			str = strings.Trim(str, "\n")
+			inputs = append(inputs, str)
+		}
+	}
 }
 
 func main() {
-	animation.AnimateSentenceForward(START_SCREEN)
-	GetInput()
+	inputController := make(chan string)
+	inputCh := make(chan string)
+
+	go GetInput(inputController, inputCh)
+	animation.AnimateSentenceForward(START_SCREEN, inputController)
+	<-inputCh
 	animation.AnimateSentenceBackward(START_SCREEN)
 
 	done := false
 	for !done {
-		animation.AnimateSentenceForward("Source : ")
-		source := GetInput()
-		animation.AnimateSentenceBackward("Source : " + source)
+		go GetInput(inputController, inputCh)
+		animation.AnimateSentenceForward("From [xx] : ", inputController)
+		source := <-inputCh
+		animation.AnimateSentenceBackward("From [xx] : " + source)
 
-		animation.AnimateSentenceForward("Target : ")
-		target := GetInput()
-		animation.AnimateSentenceBackward("Target : " + target)
+		go GetInput(inputController, inputCh)
+		animation.AnimateSentenceForward("To [xx] : ", inputController)
+		target := <-inputCh
+		animation.AnimateSentenceBackward("To [xx] : " + target)
 
-		animation.AnimateSentenceForward("Sentence : ")
-		sentence := GetInput()
+		go GetInput(inputController, inputCh)
+		animation.AnimateSentenceForward("Sentence : ", inputController)
+		sentence := <-inputCh
 		animation.AnimateSentenceBackward("Sentence : " + sentence)
 
-		trans, _ := Translate(source, target, sentence)
+		trans, err := Translate(source, target, sentence)
+		if err != nil {
+			trans = "SOMETHING WENT WRONG. CHECK YOUR INTERNET CONNECTION."
+		}
 		prompt := "\nWanna translate again [y/n]? "
 
-		animation.AnimateSentenceForward(trans + prompt)
-		input := GetInput()
+		go GetInput(inputController, inputCh)
+		animation.AnimateSentenceForward(trans+prompt, inputController)
+		input := <-inputCh
 		animation.AnimateSentenceBackward(trans + prompt + input)
 
 		promptAgain := true
@@ -115,15 +133,17 @@ func main() {
 			if input == "y" || input == "Y" {
 				promptAgain = false
 			} else if input == "n" || input == "N" {
-				animation.AnimateSentenceForward("Bye Bye")
+				animation.AnimateSentenceForwardWithNoInput("Bye Bye")
 				time.Sleep(time.Millisecond * 500)
 				animation.AnimateSentenceBackward("Bye Bye")
+
 				done = true
 				promptAgain = false
 			} else {
+				go GetInput(inputController, inputCh)
 				msg := "What are you trying to say bruh? "
-				animation.AnimateSentenceForward(msg + prompt)
-				input = GetInput()
+				animation.AnimateSentenceForward(msg+prompt, inputController)
+				input = <-inputCh
 				animation.AnimateSentenceBackward(msg + prompt + input)
 			}
 		}
